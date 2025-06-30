@@ -4,21 +4,24 @@ import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged }
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
 
 // IMPORTANTE: Para que a funcionalidade de download de PDF funcione,
-// você precisa incluir as seguintes linhas no <head> do seu arquivo HTML principal:
- <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+// você PRECISA incluir as seguintes linhas no <head> do seu arquivo HTML principal (public/index.html).
+// ELAS NÃO DEVEM ESTAR NESTE ARQUIVO (App.js).
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 // Crie um contexto para o Firebase e dados do usuário
 const FirebaseContext = createContext(null);
 
-// Configuração do Firebase fornecida pelo usuário
+// Configuração do Firebase
+// PRIORIZA variáveis de ambiente (para deploy em produção) e, se não as encontrar,
+// usa os valores hardcoded para facilidade em desenvolvimento local.
 const firebaseConfig = {
-    apiKey: "AIzaSyCDeWtdKDy_u2TneTGAa2iloJF-TJIvReE",
-    authDomain: "oscell.firebaseapp.com",
-    projectId: "oscell",
-    storageBucket: "oscell.firebasestorage.app",
-    messagingSenderId: "708260228799",
-    appId: "1:708260228799:web:38fb055779b9151d34a00a" // Este será usado como o 'appId' para as coleções
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyCDeWtdKDy_u2TneTGAa2iloJF-TJIvReE",
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "oscell.firebaseapp.com",
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "oscell",
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "oscell.firebasestorage.app",
+    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "708260228799",
+    appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:708260228799:web:38fb055779b9151d34a00a" // Este será usado como o 'appId' para as coleções
 };
 
 // Componente Provedor Firebase
@@ -32,8 +35,6 @@ const FirebaseProvider = ({ children }) => {
     useEffect(() => {
         const initializeFirebase = async () => {
             try {
-                // Remove as variáveis globais do ambiente anterior e usa a configuração fornecida
-                // __app_id, __firebase_config e __initial_auth_token não são necessários para rodar localmente com sua própria config.
                 const app = initializeApp(firebaseConfig);
                 const firestoreDb = getFirestore(app);
                 const firebaseAuth = getAuth(app);
@@ -45,7 +46,7 @@ const FirebaseProvider = ({ children }) => {
                     if (user) {
                         setUserId(user.uid);
                     } else {
-                        // Tenta autenticação anônima se não houver token inicial (como em ambientes locais)
+                        // Tenta autenticação anônima, já que não há token inicial de outro ambiente
                         await signInAnonymously(firebaseAuth);
                     }
                     setLoadingFirebase(false);
@@ -621,8 +622,7 @@ const OSGenerator = () => {
     // Função para gerar o conteúdo HTML para uma única cópia da O.S.
     const osContentHtml = (osNum) => `
         <div class="os-copy">
-            <div> <!-- Wrapper for content that grows from top -->
-                <div class="header">
+            <div> <div class="header">
                     <h1>Jordan Cell</h1>
                     <p>Assistência Técnica Especializada</p>
                     <p>Ordem de Serviço Nº: <span>${osNum}</span> | Data: <span>${osForm.date}</span></p>
@@ -652,11 +652,10 @@ const OSGenerator = () => {
                 </div>
 
                 <div class="section-title">Garantia</div>
-                <p class="text-sm text-gray-600 mt-2">A garantia cobre apenas erros de fabricação da peça. Não haverá troca se a peça apresentar arranhões, trincados ou sinais de queda.</p>
+                <p class="text-sm text-gray-600 mt-2">A garantia cobre apenas erros de fabricação da peça. Não haverá troca se a peça apresentar arranhados, trincados ou sinais de queda.</p>
             </div>
 
-            <div class="footer"> <!-- Footer always at the bottom -->
-                <div class="signature-line"></div>
+            <div class="footer"> <div class="signature-line"></div>
                 <div class="signature-text">Assinatura do Cliente</div>
                 <div class="signature-line mt-10"></div>
                 <div class="signature-text">${osForm.technicianName}</div>
